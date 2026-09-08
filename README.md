@@ -2,7 +2,7 @@
 
   <h1>SR-MPE // Protocol Solvency & Arbitrage Attenuation Engine</h1>
 
-  <p>An independent, non-linear stress simulator built to model the core solvency and resolution fee mechanics of <strong>Standard Reserve ($STANDARD)</strong>.</p>
+  <p>An independent, multi-epoch non-linear stress simulator built to model core solvency, floor backing, and dynamic resolution fee mechanics of <strong>Standard Reserve ($STANDARD)</strong>.</p>
 
   <p>
     <a href="https://standard-reserve-simulator-beta.vercel.app/"><img src="https://img.shields.io/badge/Live%20Engine-Vercel-emerald?style=flat-square" alt="Live Engine"></a>
@@ -16,29 +16,35 @@
 
 <h2>🎯 Simulated Contract Mechanics</h2>
 
-<p>Unlike superficial summaries or static text threads, <strong>SR-MPE</strong> dynamically models the non-linear execution curves of Standard Reserve's immutable smart contract architecture under extreme liquidity shifts:</p>
+<p><strong>SR-MPE</strong> dynamically models the non-linear execution curves and multi-epoch state transitions of Standard Reserve's immutable smart contract architecture under extreme capital shocks:</p>
 
 <ul>
-  <li><strong>Exponential Resolution Fee Scaling ($F_{res}$):</strong> Models dynamic fee hikes during severe capital outflows to disincentivize predatory arbitrage exploitation and capital drain.</li>
-  <li><strong>Systemic Solvency Ratio ($S_r$):</strong> Real-time mapping of Protocol-Owned Liquidity (POL) vault backing relative to net Uniswap v4 capital deltas ($\Delta F_{net}$).</li>
-  <li><strong>Contraction Burn Velocity:</strong> Calculates epoch-based $STANDARD token burn execution rates triggered automatically during negative net capital flows.</li>
-  <li><strong>Phase-Space Stress Mapping:</strong> Eliminates artificial time-series displays to map true protocol stability across a full capital vector continuum (-5,000 ETH to +5,000 ETH).</li>
+  <li><strong>Multi-Epoch Duration Simulation:</strong> Evaluates sustained capital drain scenarios across 1 to 10 consecutive epochs to measure vault degradation and burn sustainability over time.</li>
+  <li><strong>Implied Token Floor Backing ($STANDARD Floor Price):</strong> Real-time tracking of minimum asset backing per token relative to net capital deltas ($\Delta F_{net}$) and Protocol-Owned Liquidity (POL).</li>
+  <li><strong>Exponential Resolution Fee Scaling ($F_{res}$):</strong> Non-linear fee hikes during severe outflows to block predatory arbitrage extraction and protect POL vault integrity.</li>
+  <li><strong>Phase-Space Stress Mapping:</strong> Replaces static time-series graphs with a full capital vector continuum (-5,000 ETH to +5,000 ETH) mapped against solvency responses.</li>
 </ul>
 
 <hr>
 
-<h2>🛠️ Phase-Space Mathematical Architecture</h2>
+<h2>🛠️ Mathematical Formulations</h2>
 
-<p>The engine executes a non-linear feedback loop mapping the interplay between capital flow vectors, resolution penalty scaling, and vault absorption capacity:</p>
+<p>The core execution engine models non-linear contract responses using the following core formulas:</p>
 
-<pre><code>               [ Uniswap v4 Capital Delta (Δ F_net) ]
+<ul>
+  <li><strong>Resolution Fee Scaling:</strong> <code>F_res = F_base + α * (|ΔF_net| / V_POL)^1.7</code></li>
+  <li><strong>Systemic Solvency Index:</strong> <code>S_r = (V_POL + Σ ΔF_net) / V_POL</code></li>
+  <li><strong>Floor Backing Ratio:</strong> <code>Backing = S_r / 100 (ETH per $STANDARD)</code></li>
+</ul>
+
+<pre><code>               [ Uniswap v4 Capital Vector (Δ F_net) ]
                                 |
              +------------------+------------------+
              |                                     |
     (Δ F_net > 0) EXPANSION              (Δ F_net < 0) CONTRACTION
              |                                     |
   • Baseline Resolution Fee (0.50%)     • Non-Linear Fee Spike (F_res)
-  • Optimal Vault Solvency (S_r > 100%) • POL Vault Shock Absorption
+  • Dynamic Floor Price Expansion       • Multi-Epoch POL Shock Absorption
   • Zero Contraction Burn               • Automated Buyback & Burn
 </code></pre>
 
@@ -46,17 +52,17 @@
 
 <h2>🚀 Local & Cloud Deployment</h2>
 
-<p>Built as a single-file, zero-dependency Web3 research dashboard with no compilation overhead required.</p>
+<p>Built as a zero-dependency Web3 research dashboard. No build tools or compilation required.</p>
 
 <ol>
   <li>Clone the repository:
     <pre><code>git clone https://github.com/YOUR_USERNAME/standard-reserve-simulator.git</code></pre>
   </li>
-  <li>Open <code>index.html</code> in any modern web browser or deploy instantly to <strong>Vercel / Netlify</strong>.</li>
+  <li>Open <code>index.html</code> in any web browser or deploy directly to <strong>Vercel / Netlify</strong>.</li>
 </ol>
 
 <hr>
 
 <h2>📜 Research Disclaimer</h2>
 
-<p>This project is an independent community-built research and simulation tool developed for the <strong>Standard Reserve ($STANDARD)</strong> ecosystem. It serves purely as an architectural testbed and mechanism analysis tool.</p>
+<p>This project is an independent community-built research tool developed for the <strong>Standard Reserve ($STANDARD)</strong> ecosystem. It serves exclusively as an architectural testbed and stress-test simulator.</p>
