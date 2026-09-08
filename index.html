@@ -23,7 +23,7 @@
                     <span id="beacon" class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     <h1 class="text-lg font-bold tracking-widest text-emerald-400">SR-MPE // PROTOCOL SOLVENCY & ARBITRAGE ATTENUATION ENGINE</h1>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Independent Stress Simulator for Standard Reserve ($STANDARD) Immutable Mechanics</p>
+                <p class="text-xs text-gray-500 mt-1">Independent Multi-Epoch Stress Simulator for Standard Reserve ($STANDARD) Immutable Mechanics</p>
             </div>
             <div class="text-right">
                 <span class="text-[10px] text-gray-500 uppercase tracking-widest">STATE MODEL</span>
@@ -52,7 +52,7 @@
                     </div>
 
                     <div class="border-t border-gray-800 pt-4 space-y-3">
-                        <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">2. Vault Solvency Parameters</h2>
+                        <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">2. Vault & Epoch Parameters</h2>
                         
                         <div>
                             <div class="flex justify-between text-xs mb-1">
@@ -61,11 +61,19 @@
                             </div>
                             <input id="pol-input" type="range" min="5000" max="25000" value="12500" step="500" class="w-full h-1.5 bg-gray-800 rounded appearance-none cursor-pointer accent-amber-500" oninput="calculatePhysics()">
                         </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-gray-400">Outflow Duration (Epochs):</span>
+                                <span id="epoch-readout" class="font-mono text-indigo-400">1 Epoch</span>
+                            </div>
+                            <input id="epoch-input" type="range" min="1" max="10" value="1" step="1" class="w-full h-1.5 bg-gray-800 rounded appearance-none cursor-pointer accent-indigo-500" oninput="calculatePhysics()">
+                        </div>
                     </div>
 
                     <div class="border-t border-gray-800 pt-4">
                         <button onclick="injectLiquidityShock()" class="w-full py-2 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/80 text-rose-300 rounded font-mono text-xs font-bold transition">
-                            ⚡ SIMULATE BLACK SWAN DRAIN (-4,800 ETH)
+                            ⚡ SIMULATE SUSTAINED BLACK SWAN (-4,800 ETH / 5 EPOCHS)
                         </button>
                     </div>
                 </div>
@@ -80,13 +88,18 @@
                     </div>
 
                     <div class="flex justify-between border-b border-gray-800/50 pb-1.5">
+                        <span class="text-gray-500">Implied Token Floor Backing:</span>
+                        <span id="floor-val" class="text-emerald-400 font-bold">1.12 ETH / $STANDARD</span>
+                    </div>
+
+                    <div class="flex justify-between border-b border-gray-800/50 pb-1.5">
                         <span class="text-gray-500">Resolution Fee ($F_{res}$):</span>
                         <span id="fee-val" class="text-amber-400 font-bold">0.50%</span>
                     </div>
 
                     <div class="flex justify-between border-b border-gray-800/50 pb-1.5">
-                        <span class="text-gray-500">Contraction Burn Velocity:</span>
-                        <span id="burn-val" class="text-rose-400 font-bold">0.00 ETH/epoch</span>
+                        <span class="text-gray-500">Cumulative Contraction Burn:</span>
+                        <span id="burn-val" class="text-rose-400 font-bold">0.00 ETH</span>
                     </div>
 
                     <div class="flex justify-between">
@@ -103,8 +116,14 @@
                         <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider">Phase Space: Solvency Curve vs Resolution Fee Response</h3>
                         <span class="text-[10px] text-gray-600 font-mono">Non-linear Contract Mapping</span>
                     </div>
-                    <div class="h-72">
+                    <div class="h-64">
                         <canvas id="phaseChart"></canvas>
+                    </div>
+                    
+                    <!-- Mathematical Model Legend -->
+                    <div class="mt-4 pt-3 border-t border-gray-800/80 grid grid-cols-2 text-[10px] text-gray-500 font-mono">
+                        <div><strong>Fee Scaling:</strong> F_res = F_base + α * (|ΔF_net| / V_POL)^1.7</div>
+                        <div><strong>Solvency Index:</strong> S_r = (V_POL + Σ ΔF_net) / V_POL</div>
                     </div>
                 </div>
 
@@ -124,7 +143,6 @@
         function initChart() {
             const ctx = document.getElementById('phaseChart').getContext('2d');
             
-            // Generate initial phase space data points (-5000 to +5000 ETH)
             const labels = [];
             const solvencyPoints = [];
             const feePoints = [];
@@ -132,11 +150,9 @@
             for (let f = -5000; f <= 5000; f += 500) {
                 labels.push(f > 0 ? `+${f}` : `${f}`);
                 
-                // Solvency calculation
                 let sol = 100 + (f / 120);
                 solvencyPoints.push(sol.toFixed(1));
 
-                // Resolution Fee non-linear curve
                 let fee = f >= 0 ? 0.5 : 0.5 + Math.pow(Math.abs(f) / 1000, 1.8);
                 feePoints.push(fee.toFixed(2));
             }
@@ -180,22 +196,27 @@
         function calculatePhysics() {
             const flow = parseInt(document.getElementById("flow-input").value);
             const pol = parseInt(document.getElementById("pol-input").value);
+            const epochs = parseInt(document.getElementById("epoch-input").value);
 
             const flowReadout = document.getElementById("flow-readout");
             const polReadout = document.getElementById("pol-readout");
+            const epochReadout = document.getElementById("epoch-readout");
             const regimeTag = document.getElementById("regime-tag");
             const beacon = document.getElementById("beacon");
             const cardSolvency = document.getElementById("card-solvency");
 
             polReadout.innerText = `${pol.toLocaleString()} ETH`;
+            epochReadout.innerText = `${epochs} Epoch${epochs > 1 ? 's' : ''}`;
 
-            let solvencyRatio = ((pol + flow) / pol) * 100;
+            const totalFlow = flow * epochs;
+            let solvencyRatio = ((pol + totalFlow) / pol) * 100;
+            let floorBacking = (solvencyRatio / 100).toFixed(2);
             let resolutionFee = 0.50;
-            let burnVelocity = 0;
+            let cumulativeBurn = 0;
             let arbPenalty = 0;
 
             if (flow >= 0) {
-                flowReadout.innerText = `+${flow.toLocaleString()} ETH`;
+                flowReadout.innerText = `+${flow.toLocaleString()} ETH / epoch`;
                 flowReadout.className = "font-bold text-emerald-400";
                 regimeTag.innerText = "EQUILIBRIUM / EXPANSION";
                 regimeTag.className = "text-xs font-bold text-emerald-400";
@@ -203,37 +224,40 @@
                 cardSolvency.className = "p-2.5 rounded data-card";
 
                 resolutionFee = 0.50;
-                burnVelocity = 0;
+                cumulativeBurn = 0;
                 arbPenalty = 0;
 
-                pushLog("STATE_NORMAL", `Inflow +${flow} ETH. Reserve backing stable. Zero contraction burn needed.`);
+                pushLog("STATE_NORMAL", `Net Flow positive (+${flow} ETH). Multi-epoch backing expansion sustained over ${epochs} epoch(s).`);
             } else {
                 const absFlow = Math.abs(flow);
-                flowReadout.innerText = `-${absFlow.toLocaleString()} ETH`;
+                const absTotalFlow = Math.abs(totalFlow);
+
+                flowReadout.innerText = `-${absFlow.toLocaleString()} ETH / epoch`;
                 flowReadout.className = "font-bold text-rose-400";
                 regimeTag.innerText = "CONTRACTION DEFENSE ACTIVE";
                 regimeTag.className = "text-xs font-bold text-rose-400";
                 beacon.className = "h-2.5 w-2.5 rounded-full bg-rose-500 animate-ping";
                 cardSolvency.className = "p-2.5 rounded data-card-danger";
 
-                // Exponential fee scaling to protect POL
                 resolutionFee = (0.50 + Math.pow(absFlow / 800, 1.7)).toFixed(2);
-                burnVelocity = (absFlow * 0.42).toFixed(1);
+                cumulativeBurn = (absTotalFlow * 0.42).toFixed(1);
                 arbPenalty = (Math.pow(absFlow / 1000, 1.4) * 0.8).toFixed(2);
 
-                pushLog("STATE_CONTRACTION", `Outflow -${absFlow} ETH. Resolution fee elevated to ${resolutionFee}%. POL vault absorbing shock.`);
+                pushLog("STATE_CONTRACTION", `Sustained Outflow (-${absFlow} ETH/epoch over ${epochs} epochs). Resolution fee spiked to ${resolutionFee}%. Absorbing cumulative ${absTotalFlow} ETH shock.`);
             }
 
             document.getElementById("solvency-val").innerText = `${solvencyRatio.toFixed(1)}%`;
+            document.getElementById("floor-val").innerText = `${floorBacking} ETH / $STANDARD`;
             document.getElementById("fee-val").innerText = `${resolutionFee}%`;
-            document.getElementById("burn-val").innerText = `${burnVelocity} ETH/epoch`;
+            document.getElementById("burn-val").innerText = `${cumulativeBurn} ETH`;
             document.getElementById("arb-val").innerText = `${arbPenalty}%`;
         }
 
         function injectLiquidityShock() {
             document.getElementById("flow-input").value = -4800;
+            document.getElementById("epoch-input").value = 5;
             calculatePhysics();
-            pushLog("CRITICAL_SHOCK", "Liquidity Drain Shock (-4,800 ETH) applied. Contraction mechanics fully engaged.");
+            pushLog("CRITICAL_SHOCK", "SUSTAINED SHOCK APPLIED: -4,800 ETH Outflow over 5 consecutive Epochs. Analyzing vault survival limits.");
         }
 
         function pushLog(tag, msg) {
