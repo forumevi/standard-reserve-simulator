@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SR-MPE // Standard Reserve Mathematical Policy Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #030712; color: #f3f4f6; font-family: 'JetBrains Mono', monospace; }
+        .cyber-panel { background: rgba(17, 24, 39, 0.7); border: 1px solid rgba(75, 85, 99, 0.4); backdrop-filter: blur(12px); }
+        .glow-emerald { box-shadow: 0 0 20px rgba(16, 185, 129, 0.15); }
+        .glow-rose { box-shadow: 0 0 20px rgba(244, 63, 94, 0.15); }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <header class="p-6 cyber-panel rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <div class="flex items-center space-x-3">
+                    <span id="status-beacon" class="h-3 w-3 rounded-full bg-emerald-500 animate-ping"></span>
+                    <h1 class="text-xl font-bold tracking-wider text-emerald-400">SR-MPE // MONETARY POLICY & STRESS ENGINE</h1>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Simulating Immutable On-Chain Reserve Mechanics & Dynamic Resolution Fees</p>
+            </div>
+            <div class="flex items-center space-x-4 border-l border-gray-700 pl-4">
+                <div class="text-right">
+                    <span class="text-[10px] text-gray-500 uppercase tracking-widest">Protocol Regime</span>
+                    <p id="regime-display" class="text-xs font-bold text-emerald-400">EXPANSION PHASE</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Parameters Control Panel -->
+            <div class="space-y-6">
+                <div class="cyber-panel p-5 rounded-2xl space-y-5">
+                    <h2 class="text-xs font-bold text-sky-400 uppercase tracking-wider border-b border-gray-800 pb-2">1. Net ETH Flow Simulation ($F_{net}$)</h2>
+                    
+                    <div>
+                        <div class="flex justify-between text-xs mb-2">
+                            <span class="text-gray-400">Uniswap v4 Net Delta:</span>
+                            <span id="flow-display" class="font-bold text-emerald-400">+1,200 ETH</span>
+                        </div>
+                        <input id="flow-slider" type="range" min="-5000" max="5000" value="1200" step="50" class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" oninput="runEngine()">
+                        <div class="flex justify-between text-[10px] text-gray-500 mt-1">
+                            <span>-5,000 ETH (Heavy Drain)</span>
+                            <span>0</span>
+                            <span>+5,000 ETH (Liquidity Surge)</span>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-800 pt-4 space-y-4">
+                        <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">2. Banker Expansion Burn</h2>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-gray-400">Active Banker Branches:</span>
+                                <span id="branches-display" class="font-bold text-white">350 Branches</span>
+                            </div>
+                            <input id="branches-slider" type="range" min="100" max="1000" value="350" step="10" class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-amber-500" oninput="runEngine()">
+                        </div>
+                        <div class="flex justify-between text-xs bg-gray-950 p-2.5 rounded-lg border border-gray-800">
+                            <span class="text-gray-400">Cumulative Burned $STANDARD:</span>
+                            <span id="burned-display" class="font-bold text-amber-400">3,500,000</span>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-800 pt-4">
+                        <h2 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-2">3. Black Swan Stress Trigger</h2>
+                        <button onclick="triggerStressTest()" class="w-full py-2.5 bg-rose-950/80 hover:bg-rose-900 border border-rose-600/60 text-rose-300 rounded-lg font-bold text-xs transition glow-rose">
+                            ⚡ SIMULATE BLACK SWAN OUTFLOW (-4,800 ETH)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mathematical Telemetry -->
+                <div class="cyber-panel p-5 rounded-2xl space-y-3 text-xs">
+                    <h3 class="font-bold text-gray-300 border-b border-gray-800 pb-2">CONTRACUAL TELEMETRY</h3>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Target Issuance Velocity:</span>
+                        <span id="issuance-val" class="font-mono text-emerald-400">100.0%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Contraction Buyback Pool:</span>
+                        <span id="buyback-val" class="font-mono text-sky-400">0.00 ETH</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Dynamic Resolution Fee ($F_{res}$):</span>
+                        <span id="fee-val" class="font-mono text-amber-400">0.50%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">POL Vault Backing Ratio:</span>
+                        <span id="pol-val" class="font-mono text-indigo-400">142.5%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytical Visualizations -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="cyber-panel p-5 rounded-2xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider">Monetary Dynamics: Issuance Curve vs Contraction Buyback</h3>
+                        <span class="text-[10px] text-gray-500">Non-linear Contract Algorithm</span>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="engineChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Live Engine Logs -->
+                <div class="cyber-panel p-5 rounded-2xl">
+                    <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Engine Execution Stream</h3>
+                    <div id="console-log" class="h-36 overflow-y-auto space-y-1.5 font-mono text-[11px] bg-black/60 p-3 rounded-xl border border-gray-800/80"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let chart;
+
+        function initChart() {
+            const ctx = document.getElementById('engineChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['T-5', 'T-4', 'T-3', 'T-2', 'T-1', 'PRESENT'],
+                    datasets: [
+                        {
+                            label: 'Issuance Velocity (%)',
+                            data: [100, 100, 100, 100, 100, 100],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                            fill: true,
+                            tension: 0.35
+                        },
+                        {
+                            label: 'Buyback & Burn Execution (ETH)',
+                            data: [0, 0, 0, 0, 0, 0],
+                            borderColor: '#f43f5e',
+                            backgroundColor: 'rgba(244, 63, 94, 0.08)',
+                            fill: true,
+                            tension: 0.35
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: '#1f2937' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+                        y: { grid: { color: '#1f2937' }, ticks: { color: '#9ca3af', font: { size: 10 } } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#d1d5db', font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        function runEngine() {
+            const fNet = parseInt(document.getElementById("flow-slider").value);
+            const branches = parseInt(document.getElementById("branches-slider").value);
+
+            const flowDisplay = document.getElementById("flow-display");
+            const branchesDisplay = document.getElementById("branches-display");
+            const burnedDisplay = document.getElementById("burned-display");
+            const regimeDisplay = document.getElementById("regime-display");
+            const statusBeacon = document.getElementById("status-beacon");
+
+            // Update UI Counters
+            branchesDisplay.innerText = `${branches} Branches`;
+            burnedDisplay.innerText = (branches * 10000).toLocaleString();
+
+            let issuanceVelocity = 0;
+            let buybackETH = 0;
+            let resolutionFee = 0.50;
+            let polRatio = 100;
+
+            if (fNet >= 0) {
+                // EXPANSION MATHEMATICS
+                flowDisplay.innerText = `+${fNet.toLocaleString()} ETH`;
+                flowDisplay.className = "font-bold text-emerald-400";
+                regimeDisplay.innerText = "EXPANSION REGIME";
+                regimeDisplay.className = "text-xs font-bold text-emerald-400";
+                statusBeacon.className = "h-3 w-3 rounded-full bg-emerald-500 animate-ping";
+
+                // Issuance follows logarithmic growth based on positive ETH flow
+                issuanceVelocity = Math.min(100, (50 + Math.sqrt(fNet) * 0.8)).toFixed(1);
+                buybackETH = 0;
+                resolutionFee = 0.50;
+                polRatio = (100 + (fNet / 80)).toFixed(1);
+
+                addLog("REGIME_EXPANSION", `Net ETH Flow +${fNet} ETH. Issuance Velocity at ${issuanceVelocity}%. POL Backing strong.`);
+            } else {
+                // CONTRACTION MATHEMATICS (Shock Response)
+                const absFlow = Math.abs(fNet);
+                flowDisplay.innerText = `-${absFlow.toLocaleString()} ETH`;
+                flowDisplay.className = "font-bold text-rose-400";
+                regimeDisplay.innerText = "CONTRACTION REGIME";
+                regimeDisplay.className = "text-xs font-bold text-rose-400";
+                statusBeacon.className = "h-3 w-3 rounded-full bg-rose-500 animate-pulse";
+
+                // Issuance drops rapidly during outflow
+                issuanceVelocity = Math.max(0, (50 - Math.pow(absFlow / 500, 1.4))).toFixed(1);
+                
+                // POL Vault absorbs shock: 40% of liquidity drain goes to automated buyback & burn
+                buybackETH = (absFlow * 0.40).toFixed(2);
+                
+                // Resolution Fee scales dynamically to block arbitrage exploitation during stress
+                resolutionFee = (0.50 + Math.pow(absFlow / 1000, 1.6)).toFixed(2);
+                polRatio = Math.max(85, (100 - (absFlow / 150))).toFixed(1);
+
+                addLog("REGIME_CONTRACTION", `OUTFLOW SHOCK: -${absFlow} ETH. Resolution Fee hiked to ${resolutionFee}%. Executing ${buybackETH} ETH Buyback & Burn.`);
+            }
+
+            // Update Telemetry UI
+            document.getElementById("issuance-val").innerText = `${issuanceVelocity}%`;
+            document.getElementById("buyback-val").innerText = `${buybackETH} ETH`;
+            document.getElementById("fee-val").innerText = `${resolutionFee}%`;
+            document.getElementById("pol-val").innerText = `${polRatio}%`;
+
+            // Shift Chart Data
+            chart.data.datasets[0].data.shift();
+            chart.data.datasets[0].data.push(issuanceVelocity);
+
+            chart.data.datasets[1].data.shift();
+            chart.data.datasets[1].data.push(buybackETH);
+
+            chart.update();
+        }
+
+        function triggerStressTest() {
+            document.getElementById("flow-slider").value = -4800;
+            runEngine();
+            addLog("BLACK_SWAN_EVENT", "CRITICAL STRESS: -4,800 ETH Outflow triggered. Contract automated defenses fully engaged.");
+        }
+
+        function addLog(tag, msg) {
+            const container = document.getElementById("console-log");
+            const p = document.createElement("p");
+            const isCritical = tag.includes("CONTRACTION") || tag.includes("BLACK_SWAN");
+            
+            p.className = isCritical ? "text-rose-400" : "text-sky-400";
+            p.innerHTML = `<span class="text-gray-600">[${new Date().toLocaleTimeString()}]</span> <strong>[${tag}]</strong> ${msg}`;
+            
+            container.insertBefore(p, container.firstChild);
+        }
+
+        window.onload = function() {
+            initChart();
+            runEngine();
+        };
+    </script>
+</body>
+</html>
